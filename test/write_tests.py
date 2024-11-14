@@ -24,10 +24,9 @@
 import os
 import sys
 import subprocess
-sys.path.append("/Users/cgoodwine/src/gitlab.research.volexity.com/volatility3")
 
-import volatility3.plugins
 from volatility3 import framework
+import volatility3.plugins
 from volatility3.framework import (
   automagic,
   contexts,
