@@ -39,11 +39,6 @@ jobs:
         unzip linux.zip
         cd -
 
-    - name: Build dynamic test
-      run: |
-        cp test/test_volatility_temp.py test/test_volatility_plugins.py
-        python3 test/write_tests.py
-        
     - name: Run dynamic test
       run: |
         py.test ./test/test_volatility_plugins.py --volatility=vol.py --image win-xp-laptop-2005-06-25.img -k test_windows -v
