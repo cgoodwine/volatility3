@@ -25,6 +25,7 @@ import os
 import sys
 import subprocess
 sys.path.insert(0, "volatility3")
+print("sys.path", sys.path)
 
 from volatility3 import framework
 import volatility3.plugins
