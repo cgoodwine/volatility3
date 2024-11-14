@@ -25,9 +25,8 @@ import os
 import sys
 import subprocess
 sys.path.append("/home/runner/work/volatility3/volatility3")
-print("sys.path", sys.path)
 
-import volatility3.framework
+from volatility3 import framework
 import volatility3.plugins
 from volatility3.framework import (
   automagic,
@@ -126,6 +125,15 @@ def main():
   # COPIED FROM VOLATILITY !!!
   # Do the initialization
   ctx = contexts.Context()  # Construct a blank context
+  failures = framework.import_files(
+      volatility3.plugins, True
+  )  # Will not log as console's default level is WARNING
+  if failures:
+      parser.epilog = (
+          "The following plugins could not be loaded (use -vv to see why): "
+          + ", ".join(sorted(failures))
+      )
+      vollog.info(parser.epilog)
   automagics = automagic.available(ctx)
 
   plugins = framework.list_plugins()
