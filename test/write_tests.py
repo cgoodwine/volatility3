@@ -24,12 +24,12 @@
 import os
 import sys
 import subprocess
-sys.path.append("/home/runner/work/volatility3/volatility3/volatility3")
+sys.path.append("/home/runner/work/volatility3/volatility3")
 print("sys.path", sys.path)
 
-import framework
-import plugins
-from framework import (
+import voltaility3.framework
+import volatility3.plugins
+from volatility3.framework import (
   automagic,
   contexts,
   plugins,
