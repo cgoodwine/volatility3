@@ -24,6 +24,7 @@
 import os
 import sys
 import subprocess
+#sys.path.append("/Users/cgoodwine/src/cgoodwine/volatility3")
 sys.path.append("/home/runner/work/volatility3/volatility3")
 
 from volatility3 import framework
@@ -125,15 +126,25 @@ def main():
   # COPIED FROM VOLATILITY !!!
   # Do the initialization
   ctx = contexts.Context()  # Construct a blank context
+  failures = framework.import_files(
+      volatility3.plugins, True
+  )  # Will not log as console's default level is WARNING
+  if failures:
+      parser.epilog = (
+          "The following plugins could not be loaded (use -vv to see why): "
+          + ", ".join(sorted(failures))
+      )
+      vollog.info(parser.epilog)
   automagics = automagic.available(ctx)
 
   plugins = framework.list_plugins()
+  print('plugins', plugins)
 
   all_plugins = sort_plugins(plugins)
 
   get_inputs(all_plugins)
   found_tests = find_existing_tests('test_volatility.py')
-  print('found tests', found_tests)
+  print('found tests', [x.full_name for x in found_tests])
 
   extra_weird_count = 0
   kinda_weird_count = 0
