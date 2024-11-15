@@ -134,7 +134,7 @@ def main():
           "The following plugins could not be loaded (use -vv to see why): "
           + ", ".join(sorted(failures))
       )
-      vollog.info(epilog)
+      print(epilog)
   automagics = automagic.available(ctx)
 
   plugins = framework.list_plugins()
