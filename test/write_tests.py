@@ -133,6 +133,7 @@ def main():
 
   get_inputs(all_plugins)
   found_tests = find_existing_tests('test_volatility.py')
+  print('found tests', found_tests)
 
   extra_weird_count = 0
   kinda_weird_count = 0
@@ -154,6 +155,7 @@ def main():
   failed = []
   for plugin in needs_test:
     write_vol_plugin(plugin, 'test/test_volatility_plugins.py')
+    print('wrote plugin for', plugin.class_name)
 
 
 if __name__ == '__main__':
