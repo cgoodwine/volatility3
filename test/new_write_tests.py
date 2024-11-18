@@ -35,13 +35,13 @@ from volatility3.framework import (
   plugins,
 )
 
-def runvol(args, volatility, python):
+def runvol(args, volatility, python, plugin):
     volpy = volatility
     python_cmd = python
 
-    cmd_one = [python_cmd, volpy] + args + ['--help']
-    p_one = subprocess.Popen(cmd_one, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = p_one.communicate()
+    cmd = [python_cmd, volpy] + args + ['--help']
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
     output = str(stdout)
     output = output.replace(r'\n', '\n')
     usage = output.splitlines()[1] + '\n'
@@ -49,21 +49,17 @@ def runvol(args, volatility, python):
       start_index = usage.find("[")
       end_index = usage.rfind("]")
       usage = usage[:start_index] + usage[end_index+1:]
-    cmd = [python_cmd, volpy] + args 
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = p.communicate()
-    print(" ".join(cmd) + " " + str(p.returncode), end=" ")
     if "--" in usage:
       print("arguments required")
-    else:
-      print()
+    else: 
+      write_vol_plugin(plugin, "test/test_volatility_plugins.py")
+    print(" ".join(cmd) + " " + str(p.returncode))
 
-    #print("")
 
     return p.returncode
 
 
-def runvol_plugin(plugin, img, volatility, python, pluginargs=[], globalargs=[]):
+def runvol_plugin(plugin, img, volatility, python, full_plugin, pluginargs=[], globalargs=[]):
     args = (
         globalargs
         + [
@@ -75,7 +71,19 @@ def runvol_plugin(plugin, img, volatility, python, pluginargs=[], globalargs=[])
         + pluginargs
     )
 
-    return runvol(args, volatility, python)
+    return runvol(args, volatility, python, full_plugin)
+
+
+def write_vol_plugin(plugin, file_name):
+  # write the plugin to the 'test_volatility2.py' file
+
+  # tests are written as described in the assumptions
+  test_func = 'test_' + plugin.os + '_' + plugin.class_name.lower()
+  parameters = 'image, volatility, python'
+  with open(file_name, 'a') as f:
+    f.write('def ' + test_func + '(' + parameters + '):\n')
+    f.write('\trc, out, err = runvol_plugin(\"' + plugin.os + '.' + plugin.file_name + '.' + plugin.class_name + '\", image, volatility, python)\n')
+    f.write('\tassert rc == 0\n\n')
 
 
 class Plugin:
@@ -231,12 +239,12 @@ def main():
      # if ('interfaces.plugins.PluginInterface' not in plugin.inputs and 'plugins.PluginInterface' not in plugin.inputs):
      #   print("INPUTS:", plugin.inputs, 'for plugin', plugin.os + '.' + plugin.file_name + '.' + plugin.class_name)
      # else:
-        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, image, volatility, python)
+        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, image, volatility, python, plugin)
     if len(plugin.inputs) == 2:
      # if (('interfaces.plugins.PluginInterface' not in plugin.inputs and 'plugins.PluginInterface' not in plugin.inputs) or 'timeliner.TimeLinerInterface' not in plugin.inputs):
      #   print("INPUTS:", plugin.inputs, 'for plugin', plugin.os + '.' + plugin.file_name + '.' + plugin.class_name)
      # else:
-        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, image, volatility, python)
+        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, image, volatility, python, plugin)
     if return_code != -1:
       if return_code == 1:
         failed.append(plugin)
