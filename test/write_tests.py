@@ -82,7 +82,6 @@ def write_vol_plugin(plugin, file_name):
   with open(file_name, 'a') as f:
     f.write('def ' + test_func + '(' + parameters + '):\n')
     f.write('\trc, out, err = runvol_plugin(\"' + plugin.os + '.' + plugin.file_name + '.' + plugin.class_name + '\", image, volatility, python)\n')
-    f.write('\tif rc != 0 and \"the following arguments are required\" not in err: \n\t\tprint(err)\n')
     f.write('\tassert rc == 0\n\n')
 
 
