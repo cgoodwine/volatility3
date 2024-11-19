@@ -195,11 +195,11 @@ def main():
       volatility3.plugins, True
   )  # Will not log as console's default level is WARNING
   if failures:
-      parser.epilog = (
+      epilog = (
           "The following plugins could not be loaded (use -vv to see why): "
           + ", ".join(sorted(failures))
       )
-      vollog.info(parser.epilog)
+      print(epilog)
   automagics = automagic.available(ctx)
 
   plugins = framework.list_plugins()
