@@ -45,15 +45,18 @@ def runvol(args, volatility, python, plugin):
     output = str(stdout)
     output = output.replace(r'\n', '\n')
     usage = output.splitlines()[1] + '\n'
-    while '[' in usage:
-      start_index = usage.find("[")
-      end_index = usage.rfind("]")
-      usage = usage[:start_index] + usage[end_index+1:]
+    if len(output.splitlines()[2]) > 0:
+      usage = usage.strip("\n")
+      usage = usage + output.splitlines()[2]
+    while "[" in usage:
+#      usage = re.sub(r"\[\-+[a-zA-Z\s\-\.]*\]", "", usage)
+#      usage = re.sub(r"\[\-+[a-zA-Z\s\.\-\_]*\]|\[-+[a-zA-Z\s\.\_]*\[[a-zA-Z\s\.\_]*\][a-zA-Z\s\.\_]*\]", "", usage)
+      usage = re.sub(r"\[[a-zA-Z\s\.\-_]*\]|\[[a-zA-Z\s\._]*\[[a-zA-Z\s\._]*\][a-zA-Z\s\._]*\]", "", usage)
     if "--" in usage:
-      print("arguments required")
+      print("arguments required:", " ".join(cmd) + " " + str(p.returncode))
     else: 
       write_vol_plugin(plugin, "test/test_volatility_plugins.py")
-    print(" ".join(cmd) + " " + str(p.returncode))
+      print("wrote test for:", " ".join(cmd) + " " + str(p.returncode))
 
 
     return p.returncode
