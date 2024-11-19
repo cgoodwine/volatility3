@@ -25,10 +25,10 @@ import os
 import sys
 import re
 import subprocess
-sys.path.append("/Users/cgoodwine/src/gitlab.research.volexity.com/volatility3")
+sys.path.append("/home/runner/work/volatility3/volatility3")
 
-import volatility3.plugins
 from volatility3 import framework
+import volatility3.plugins
 from volatility3.framework import (
   automagic,
   contexts,
