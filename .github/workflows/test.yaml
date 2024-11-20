@@ -43,7 +43,7 @@ jobs:
       run: |
         cp test/test_volatility_temp.py test/test_volatility_plugins.py
         python3 test/new_write_tests.py win-xp-laptop-2005-06-25.img windows
-        python3 test/new_write_tests.py linux-sample-1.img windows
+        python3 test/new_write_tests.py linux-sample-1.img linux
 
     - name: Run dynamic test
       run: |
