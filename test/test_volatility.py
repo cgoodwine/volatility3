@@ -279,6 +279,7 @@ def test_windows_devicetree(image, volatility, python):
 def test_linux_pslist(image, volatility, python):
     rc, out, err = runvol_plugin("linux.pslist.PsList", image, volatility, python)
     out = out.lower()
+    print("out:", out)
 
     assert (out.find(b"init") != -1) or (out.find(b"systemd") != -1)
     assert out.find(b"watchdog") != -1
