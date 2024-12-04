@@ -525,13 +525,13 @@ def test_mac_trustedbsd(image, volatility, python):
 
 
 # Cases to ignore (all-tests)
-  # test_windows_kpcrs
-  # test_windows_debugregisters
-  # test_windows_vadyarascan
-  # test_windows_passphrase
-  # test_windows_netstat
-  # test_windows_crashinfo
+  # def test_windows_kpcrs
+  # def test_windows_debugregisters
+  # def test_windows_vadyarascan
+  # def test_windows_passphrase
+  # def test_windows_netstat
+  # def test_windows_crashinfo
 
-  # test_linux_pidhashtable
-  # test_linux_pstree
-  # test_linux_vmayarascan
+  # def test_linux_pidhashtable
+  # def test_linux_pstree
+  # def test_linux_vmayarascan
