@@ -52,9 +52,10 @@ def runvol(args, volatility, python, plugin):
 #      usage = re.sub(r"\[\-+[a-zA-Z\s\-\.]*\]", "", usage)
 #      usage = re.sub(r"\[\-+[a-zA-Z\s\.\-\_]*\]|\[-+[a-zA-Z\s\.\_]*\[[a-zA-Z\s\.\_]*\][a-zA-Z\s\.\_]*\]", "", usage)
       usage = re.sub(r"\[[a-zA-Z\s\.\-_]*\]|\[[a-zA-Z\s\._]*\[[a-zA-Z\s\._]*\][a-zA-Z\s\._]*\]", "", usage)
-    if "--" in usage:
-      print("arguments required:", " ".join(cmd) + " " + str(p.returncode))
-    else: 
+    #if "--" in usage:
+      #print("arguments required:", " ".join(cmd) + " " + str(p.returncode))
+    #else: 
+    if not "--" in usage:
       write_vol_plugin(plugin, "test/test_volatility_plugins.py")
       print("wrote test for:", " ".join(cmd) + " " + str(p.returncode))
 
@@ -160,6 +161,7 @@ def find_existing_tests(file_name):
         func_name = line[line.find('test'):line.find('(')]
         plugin = Plugin(func_name[func_name.find('_')+1:func_name.find('_', func_name.find('_')+1)], '', '', '', func_name[func_name.find('_', func_name.find('_')+1)+1:], [])
         test_names.append(plugin)
+        print("def and test in line", line, "with func name", func_name)
         
   return test_names
 
@@ -225,9 +227,6 @@ def main():
     if plugin not in have_test:
       needs_test.append(plugin)
 
-  for plugin in have_test:
-    print('have test for', plugin.file_name, plugin.os)
-
   volatility='vol.py'
   image=sys.argv[1]
   os_type=sys.argv[2]
@@ -239,14 +238,8 @@ def main():
     if plugin.os != os_type:
       continue
     if len(plugin.inputs) == 1:
-     # if ('interfaces.plugins.PluginInterface' not in plugin.inputs and 'plugins.PluginInterface' not in plugin.inputs):
-     #   print("INPUTS:", plugin.inputs, 'for plugin', plugin.os + '.' + plugin.file_name + '.' + plugin.class_name)
-     # else:
         return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, image, volatility, python, plugin)
     if len(plugin.inputs) == 2:
-     # if (('interfaces.plugins.PluginInterface' not in plugin.inputs and 'plugins.PluginInterface' not in plugin.inputs) or 'timeliner.TimeLinerInterface' not in plugin.inputs):
-     #   print("INPUTS:", plugin.inputs, 'for plugin', plugin.os + '.' + plugin.file_name + '.' + plugin.class_name)
-     # else:
         return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, image, volatility, python, plugin)
     if return_code != -1:
       if return_code == 1:
@@ -256,8 +249,5 @@ def main():
       elif return_code != 0:
         print("weird return code {return_code} for plugin {plugin.class_name}")
     
-  print("failed:", failed)
-  print("need parameters:", need_parameters)
-
 if __name__ == '__main__':
   main()
