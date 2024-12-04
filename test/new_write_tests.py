@@ -14,9 +14,12 @@
 #          just have __init__.py in that folder but still should check it in case that changes
           
 
-## RUN ALL TESTS REGARDLESS OF INPUTS
-## only check is to make sure that they do not backtrace
 
+# Options for inputs to plugins:
+#  1. no inputs
+#  2. one input: either interfaces.plugin.PluginInterface OR plugins.PluginInterface
+#    2a. one input: unique (?? maybe works maybe not; seems ok for some of them but still fine-tuning)
+#  3. two inputs: (either interfaces.plugin.PluginInterface OR plugins.PluginInterface) combined with (timeliner.TimelinerInterface)
 
 import os
 import sys
@@ -32,9 +35,51 @@ from volatility3.framework import (
   plugins,
 )
 
+def runvol(args, volatility, python, plugin):
+    volpy = volatility
+    python_cmd = python
+
+    cmd = [python_cmd, volpy] + args + ['--help']
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    output = str(stdout)
+    output = output.replace(r'\n', '\n')
+    usage = output.splitlines()[1] + '\n'
+    if len(output.splitlines()[2]) > 0:
+      usage = usage.strip("\n")
+      usage = usage + output.splitlines()[2]
+    while "[" in usage:
+#      usage = re.sub(r"\[\-+[a-zA-Z\s\-\.]*\]", "", usage)
+#      usage = re.sub(r"\[\-+[a-zA-Z\s\.\-\_]*\]|\[-+[a-zA-Z\s\.\_]*\[[a-zA-Z\s\.\_]*\][a-zA-Z\s\.\_]*\]", "", usage)
+      usage = re.sub(r"\[[a-zA-Z\s\.\-_]*\]|\[[a-zA-Z\s\._]*\[[a-zA-Z\s\._]*\][a-zA-Z\s\._]*\]", "", usage)
+    #if "--" in usage:
+      #print("arguments required:", " ".join(cmd) + " " + str(p.returncode))
+    #else: 
+    if not "--" in usage:
+      write_vol_plugin(plugin, "test/test_volatility_plugins.py")
+      print("wrote test for:", " ".join(cmd) + " " + str(p.returncode))
+
+
+    return p.returncode
+
+
+def runvol_plugin(plugin, img, volatility, python, full_plugin, pluginargs=[], globalargs=[]):
+    args = (
+        globalargs
+        + [
+            "--single-location",
+            img,
+            "-q",
+            plugin,
+        ]
+        + pluginargs
+    )
+
+    return runvol(args, volatility, python, full_plugin)
+
 
 def write_vol_plugin(plugin, file_name):
-  # write the plugin to the 'test_volatility_plugins.py' file
+  # write the plugin to the 'test_volatility2.py' file
 
   # tests are written as described in the assumptions
   test_func = 'test_' + plugin.os + '_' + plugin.class_name.lower()
@@ -119,6 +164,7 @@ def find_existing_tests(file_name):
         func_name = line[line.find('test'):line.find('(')]
         plugin = Plugin(func_name[func_name.find('_')+1:func_name.find('_', func_name.find('_')+1)], '', '', '', func_name[func_name.find('_', func_name.find('_')+1)+1:], [])
         test_names.append(plugin)
+        print("def and test in line", line, "with func name", func_name)
         
   return test_names
 
@@ -184,13 +230,28 @@ def main():
     if plugin not in have_test:
       needs_test.append(plugin)
 
-  #for plugin in have_test:
-  #  print('have test for', plugin.file_name, plugin.os)
-
   volatility='vol.py'
+  image=sys.argv[1]
+  os_type=sys.argv[2]
   python='python3'
+  need_parameters = []
+  failed = []
   for plugin in needs_test:
-    write_vol_plugin(plugin, "test/test_volatility_plugins.py")
-
+    return_code = -1
+    if plugin.os != os_type:
+      continue
+    if len(plugin.inputs) == 1:
+        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, image, volatility, python, plugin)
+    if len(plugin.inputs) == 2:
+        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, image, volatility, python, plugin)
+    if return_code != -1:
+      if return_code == 1:
+        failed.append(plugin)
+      elif return_code == 2:
+        need_parameters.append(plugin)
+      elif return_code != 0:
+        print("weird return code {return_code} for plugin {plugin.class_name}")
+    
 if __name__ == '__main__':
   main()
+
