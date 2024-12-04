@@ -522,3 +522,16 @@ def test_mac_trustedbsd(image, volatility, python):
 
     assert out.count(b"\n") > 10
     assert rc == 0
+
+
+# Cases to ignore (all-tests)
+  # test_windows_kpcrs
+  # test_windows_debugregisters
+  # test_windows_vadyarascan
+  # test_windows_passphrase
+  # test_windows_netstat
+  # test_windows_crashinfo
+
+  # test_linux_pidhashtable
+  # test_linux_pstree
+  # test_linux_vmayarascan
