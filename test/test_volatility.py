@@ -530,6 +530,7 @@ def test_mac_trustedbsd(image, volatility, python):
   # def test_windows_vadyarascan
   # def test_windows_passphrase
   # def test_windows_netstat
+  # def test_windows_netscan
   # def test_windows_crashinfo
 
   # def test_linux_pidhashtable
