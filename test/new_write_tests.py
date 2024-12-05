@@ -161,32 +161,6 @@ def find_existing_tests(file_name):
   return test_names
 
 def main():
-  
-  # open test_volatility
-  windows_tests = []
-  windows_func_start = "test_windows_"
-  mac_tests = []
-  mac_func_start = "test_mac_"
-  linux_tests = []
-  linux_func_start = "test_linux_"
-  misc_tests = []
-  misc_func_start = "test_misc_"
-  with open("test/test_volatility.py", "r") as file:
-    for line in file:
-      if 'def' in line:
-#        print(line, end='')
-        def_find = line.find('def')
-        open_parenthesis_find = line.find("(")
-        func_name = line[def_find+4:open_parenthesis_find]
-        if 'test' in func_name:
-          if 'windows' in func_name:
-            windows_tests.append(func_name[len(windows_func_start):])
-          if 'mac' in func_name:
-            mac_tests.append(func_name[len(mac_func_start):])
-          if 'linux' in func_name:
-            linux_tests.append(func_name[len(linux_func_start):])
-          if 'windows' not in func_name and 'mac' not in func_name and 'linux' not in func_name:
-            misc_tests.append(func_name[len(misc_func_start):])
 
   # COPIED FROM VOLATILITY !!!
   # Do the initialization
