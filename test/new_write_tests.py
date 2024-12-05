@@ -49,13 +49,10 @@ def runvol(args, volatility, python, plugin):
       usage = usage.strip("\n")
       usage = usage + output.splitlines()[2]
     while "[" in usage:
-#      usage = re.sub(r"\[\-+[a-zA-Z\s\-\.]*\]", "", usage)
-#      usage = re.sub(r"\[\-+[a-zA-Z\s\.\-\_]*\]|\[-+[a-zA-Z\s\.\_]*\[[a-zA-Z\s\.\_]*\][a-zA-Z\s\.\_]*\]", "", usage)
       usage = re.sub(r"\[[a-zA-Z\s\.\-_]*\]|\[[a-zA-Z\s\._]*\[[a-zA-Z\s\._]*\][a-zA-Z\s\._]*\]", "", usage)
-    #if "--" in usage:
-      #print("arguments required:", " ".join(cmd) + " " + str(p.returncode))
-    #else: 
-    if not "--" in usage:
+    if "--" in usage:
+      print("arguments required:", " ".join(cmd) + " " + str(p.returncode))
+    else: 
       write_vol_plugin(plugin, "test/test_volatility_plugins.py")
       print("wrote test for:", " ".join(cmd) + " " + str(p.returncode))
 
@@ -79,8 +76,6 @@ def runvol_plugin(plugin, img, volatility, python, full_plugin, pluginargs=[], g
 
 
 def write_vol_plugin(plugin, file_name):
-  # write the plugin to the 'test_volatility2.py' file
-
   # tests are written as described in the assumptions
   test_func = 'test_' + plugin.os + '_' + plugin.class_name.lower()
   parameters = 'image, volatility, python'
