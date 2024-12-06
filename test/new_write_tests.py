@@ -44,12 +44,15 @@ def runvol(args, volatility, python, plugin):
     stdout, stderr = p.communicate()
     output = str(stdout)
     output = output.replace(r'\n', '\n')
-    usage = output.splitlines()[1] + '\n'
-    if len(output.splitlines()[2]) > 0:
-      usage = usage.strip("\n")
-      usage = usage + output.splitlines()[2]
-    while "[" in usage:
-      usage = re.sub(r"\[[a-zA-Z\s\.\-_]*\]|\[[a-zA-Z\s\._]*\[[a-zA-Z\s\._]*\][a-zA-Z\s\._]*\]", "", usage)
+    if len(output.splitlines()) > 2: 
+      usage = output.splitlines()[1] + '\n'
+      if len(output.splitlines()[2]) > 0:
+        usage = usage.strip("\n")
+        usage = usage + output.splitlines()[2]
+      while "[" in usage:
+        usage = re.sub(r"\[[a-zA-Z\s\.\-_]*\]|\[[a-zA-Z\s\._]*\[[a-zA-Z\s\._]*\][a-zA-Z\s\._]*\]", "", usage)
+    else:
+      usage = output.splitlines()[1]
     if "--" in usage:
       print("arguments required:", " ".join(cmd) + " " + str(p.returncode))
     else: 
@@ -197,19 +200,15 @@ def main():
       needs_test.append(plugin)
 
   volatility='vol.py'
-  image=sys.argv[1]
-  os_type=sys.argv[2]
   python='python3'
   need_parameters = []
   failed = []
   for plugin in needs_test:
     return_code = -1
-    if plugin.os != os_type:
-      continue
     if len(plugin.inputs) == 1:
-        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, image, volatility, python, plugin)
+        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, '', volatility, python, plugin)
     if len(plugin.inputs) == 2:
-        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, image, volatility, python, plugin)
+        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, '', volatility, python, plugin)
     if return_code != -1:
       if return_code == 1:
         failed.append(plugin)
