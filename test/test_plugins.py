@@ -5,15 +5,31 @@
 # IMPORTS
 #
 
+import argparse
+import hashlib
+import json
+import ntpath
 import os
+import pytest
 import re
+import shutil
 import subprocess
 import sys
-import shutil
 import tempfile
-import hashlib
-import ntpath
-import json
+from typing import Any, Dict, List, Tuple, Type, Union
+from volatility3.cli import volargparse
+from volatility3.framework.configuration import requirements
+from volatility3 import framework
+from volatility3.framework import (
+  automagic,
+  contexts,
+  plugins,
+  interfaces,
+)
+import volatility3.plugins
+
+sys.path.append("/home/runner/work/volatility3/volatility3")
+
 
 #
 # HELPER FUNCTIONS
@@ -51,49 +67,6 @@ def runvol_plugin(plugin, img, volatility, python, pluginargs=[], globalargs=[])
     )
     return runvol(args, volatility, python)
     
-
-# ASSUMPTIONS: 
-#   1. all existing plugin tests are contained in test_volatility.py 
-#   2. all existing plugin tests are functions named 'test_[windows OR mac OR linux OR misc]_FILENAME'
-#     2.1 ex: test_windows_psslist means it tests all classes in the volatility3/framework/plugins/windows/psslist.py file
-#   3. all plugins can be found calling framework.list_plugins()
-#   4. all plugins are named [windows OR mac OR linux OR FILENAME (for misc)].FILENAME+.CLASSNAME (except for the misc plugins) (FILENAME+ means there can be multiple directories
-#      between [windows OR mac OR linux] and the classname; the only one that actually exists as of now is windows/registry/)
-#     4.1 ex: windows.mftscan.MFTScan or windows.mftscan.ADS means that volatility3/framework/plugins/windows has a file named 'mftscan.py' and that has (at least) two classes named MFTScan and ADS
-#     4.2 ex: banners.Banners means that volatility3/framework/plugins/ has a file named 'banners.py' and that has (at least) one class named Banners
-#     4.3 ex: windows.registry.hivelist.HiveList means that volatility3/framework/plugins/windows/registry/hivelist has (at least) one class named HiveList
-#       4.3.1 ex: in cases like this, the test would be named after the LAST filename in the list (hivelist, not registry)
-#   5. all plugins can be found under volatility3/framework/plugins/[windows OR mac OR linux OR nothing for misc]
-#     5.1: this needs to be updated; forgot that there was a volatility3/plugins/[windows OR mac OR linux] case; it does seem like the only one to actually use this case is windows (mac and linux
-#          just have __init__.py in that folder but still should check it in case that changes
-          
-
-
-# Options for inputs to plugins:
-#  1. no inputs
-#  2. one input: either interfaces.plugin.PluginInterface OR plugins.PluginInterface
-#    2a. one input: unique (?? maybe works maybe not; seems ok for some of them but still fine-tuning)
-#  3. two inputs: (either interfaces.plugin.PluginInterface OR plugins.PluginInterface) combined with (timeliner.TimelinerInterface)
-
-import os
-import sys
-import re
-import subprocess
-import pytest
-sys.path.append("/home/runner/work/volatility3/volatility3")
-
-import argparse
-from volatility3.framework.configuration import requirements
-from typing import Any, Dict, List, Tuple, Type, Union
-from volatility3 import framework
-import volatility3.plugins
-from volatility3.framework import (
-  automagic,
-  contexts,
-  plugins,
-  interfaces,
-)
-from volatility3.cli import volargparse
 
 def populate_requirements_argparse(
     parser: Union[argparse.ArgumentParser, argparse._ArgumentGroup],
@@ -219,19 +192,6 @@ def get_inputs(plugins):
     except Exception:
       print("couldn't find path:", full_path)
       del plugins[plugins.index(plugin)]
-
-
-def find_existing_tests(file_name):
-  test_names = []
-
-  with open("test/" + file_name, 'r') as f:
-    for line in f:
-      if 'def' in line and 'test' in line:
-        func_name = line[line.find('test'):line.find('(')]
-        plugin = Plugin(func_name[func_name.find('_')+1:func_name.find('_', func_name.find('_')+1)], '', '', '', func_name[func_name.find('_', func_name.find('_')+1)+1:], [])
-        test_names.append(plugin)
-        
-  return test_names
 
 def pytest_generate_tests(metafunc):
   # COPIED FROM VOLATILITY !!!
