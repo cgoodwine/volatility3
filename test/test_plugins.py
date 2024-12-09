@@ -169,30 +169,6 @@ def sort_plugins(plugins):
         
   return results
 
-
-def get_inputs(plugins):
-  relative_path = "volatility3/framework/plugins/"
-  for plugin in plugins:
-    # build path
-    full_path = relative_path
-    if plugin.os != "misc":
-      full_path += (plugin.os + "/")
-    if plugin.directories != "":
-      continue # SKIP NESTED DIRECTORIES FOR NOW
-    full_path += (plugin.file_name + '.py')
-    
-    try:
-      with open(full_path, 'r') as file:
-        # find the classes
-        for line in file:
-          if "class " + plugin.class_name + "(" in line:
-            inputs = line[line.find('(')+1:line.find(')')].split(', ')
-            for i in inputs:
-              plugin.inputs.append(i)
-    except Exception:
-      print("couldn't find path:", full_path)
-      del plugins[plugins.index(plugin)]
-
 def pytest_generate_tests(metafunc):
   # COPIED FROM VOLATILITY !!!
   parser = volargparse.HelpfulArgParser(
@@ -247,8 +223,6 @@ def pytest_generate_tests(metafunc):
 
 
   all_plugins = sort_plugins(all_plugins)
-
-  get_inputs(all_plugins)
 
   # These are the tests to skip; they have a return code != 0
   skip_tests = ['windows_shimcachemem', 'windows_kpcrs', 'windows_debugregisters', 'windows_virtmap', 'windows_vadyarascan', 'windows_netscan',
