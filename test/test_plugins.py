@@ -229,9 +229,6 @@ def pytest_generate_tests(metafunc):
     'windows_passphrase', 'windows_scheduledtasks', 'windows_netstat', 'windows_crashinfo', 'linux_ebpf', 'linux_files', 'linux_capabilities',
     'linux_pidhashtable', 'linux_kthreads', 'linux_pstree', 'linux_vmayarascan', 'test_windows_hashdump', 'test_windows_lsadump', 'test_windows_cachedump']
 
-  extra_weird_count = 0
-  kinda_weird_count = 0
-  normal_count = 0
   needs_test = []
   have_test = []
   for plugin in all_plugins:
@@ -252,7 +249,7 @@ def pytest_generate_tests(metafunc):
 
 def test_vol_plugin(plugin, image, volatility, python):
   # tests are written as described in the assumptions
-    rc, out, err = runvol_plugin(plugin[5:], image, volatility, python)
+    rc, out, err = runvol_plugin(plugin[plugin.find("_")+1:], image, volatility, python)
     assert rc == 0
 
 
