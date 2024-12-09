@@ -27,55 +27,81 @@ import re
 import subprocess
 sys.path.append("/home/runner/work/volatility3/volatility3")
 
+import argparse
+from volatility3.framework.configuration import requirements
+from typing import Any, Dict, List, Tuple, Type, Union
 from volatility3 import framework
 import volatility3.plugins
 from volatility3.framework import (
   automagic,
   contexts,
   plugins,
+  interfaces,
 )
+from volatility3.cli import volargparse
 
-def runvol(args, volatility, python, plugin):
-    volpy = volatility
-    python_cmd = python
+def populate_requirements_argparse(
+    parser: Union[argparse.ArgumentParser, argparse._ArgumentGroup],
+    configurable: Type[interfaces.configuration.ConfigurableInterface],
+):
+    """Adds the plugin's simple requirements to the provided parser.
 
-    cmd = [python_cmd, volpy] + args + ['--help']
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = p.communicate()
-    output = str(stdout)
-    output = output.replace(r'\n', '\n')
-    if len(output.splitlines()) > 2: 
-      usage = output.splitlines()[1] + '\n'
-      if len(output.splitlines()[2]) > 0:
-        usage = usage.strip("\n")
-        usage = usage + output.splitlines()[2]
-      while "[" in usage:
-        usage = re.sub(r"\[[a-zA-Z\s\.\-_]*\]|\[[a-zA-Z\s\._]*\[[a-zA-Z\s\._]*\][a-zA-Z\s\._]*\]", "", usage)
-    else:
-      usage = output.splitlines()[1]
-    if "--" in usage:
-      print("arguments required:", " ".join(cmd) + " " + str(p.returncode))
-    else: 
-      write_vol_plugin(plugin, "test/test_volatility_plugins.py")
-      print("wrote test for:", " ".join(cmd) + " " + str(p.returncode))
+    Args:
+        parser: The parser to add the plugin's (simple) requirements to
+        configurable: The plugin object to pull the requirements from
+    """
+    if not issubclass(configurable, interfaces.configuration.ConfigurableInterface):
+        raise TypeError(
+            f"Expected ConfigurableInterface type, not: {type(configurable)}"
+        )
 
+    # Construct an argparse group
 
-    return p.returncode
-
-
-def runvol_plugin(plugin, img, volatility, python, full_plugin, pluginargs=[], globalargs=[]):
-    args = (
-        globalargs
-        + [
-            "--single-location",
-            img,
-            "-q",
-            plugin,
-        ]
-        + pluginargs
-    )
-
-    return runvol(args, volatility, python, full_plugin)
+    for requirement in configurable.get_requirements():
+        additional: Dict[str, Any] = {}
+        if not isinstance(
+            requirement, interfaces.configuration.RequirementInterface
+        ):
+            raise TypeError(
+                "Plugin contains requirements that are not RequirementInterfaces: {}".format(
+                    configurable.__name__
+                )
+            )
+        if isinstance(requirement, interfaces.configuration.SimpleTypeRequirement):
+            additional["type"] = requirement.instance_type
+            if isinstance(requirement, requirements.IntRequirement):
+                additional["type"] = lambda x: int(x, 0)
+            if isinstance(requirement, requirements.BooleanRequirement):
+                additional["action"] = "store_true"
+                if "type" in additional:
+                    del additional["type"]
+        elif isinstance(
+            requirement,
+            volatility3.framework.configuration.requirements.ListRequirement,
+        ):
+            # Allow a list of integers, specified with the convenient 0x hexadecimal format
+            if requirement.element_type == int:
+                additional["type"] = lambda x: int(x, 0)
+            else:
+                additional["type"] = requirement.element_type
+            nargs = "*" if requirement.optional else "+"
+            additional["nargs"] = nargs
+        elif isinstance(
+            requirement,
+            volatility3.framework.configuration.requirements.ChoiceRequirement,
+        ):
+            additional["type"] = str
+            additional["choices"] = requirement.choices
+        else:
+            continue
+        parser.add_argument(
+            "--" + requirement.name.replace("_", "-"),
+            help=requirement.description,
+            default=requirement.default,
+            dest=requirement.name,
+            required=not requirement.optional,
+            **additional,
+        )
 
 
 def write_vol_plugin(plugin, file_name):
@@ -84,7 +110,7 @@ def write_vol_plugin(plugin, file_name):
   parameters = 'image, volatility, python'
   with open(file_name, 'a') as f:
     f.write('def ' + test_func + '(' + parameters + '):\n')
-    f.write('\trc, out, err = runvol_plugin(\"' + plugin.os + '.' + plugin.file_name + '.' + plugin.class_name + '\", image, volatility, python)\n')
+    f.write('\trc, out, err = runvol_plugin(\"' + plugin.full_name + '\", image, volatility, python)\n')
     f.write('\tassert rc == 0\n\n')
 
 
@@ -159,32 +185,68 @@ def find_existing_tests(file_name):
         func_name = line[line.find('test'):line.find('(')]
         plugin = Plugin(func_name[func_name.find('_')+1:func_name.find('_', func_name.find('_')+1)], '', '', '', func_name[func_name.find('_', func_name.find('_')+1)+1:], [])
         test_names.append(plugin)
-        print("def and test in line", line, "with func name", func_name)
         
   return test_names
 
 def main():
-
   # COPIED FROM VOLATILITY !!!
+  parser = volargparse.HelpfulArgParser(
+      add_help=False,
+      description="An open-source memory forensics framework",
+  )
+
   # Do the initialization
   ctx = contexts.Context()  # Construct a blank context
   failures = framework.import_files(
       volatility3.plugins, True
   )  # Will not log as console's default level is WARNING
   if failures:
-      epilog = (
+      parser.epilog = (
           "The following plugins could not be loaded (use -vv to see why): "
           + ", ".join(sorted(failures))
       )
-      print(epilog)
+      print(parser.epilog)
   automagics = automagic.available(ctx)
 
   plugins = framework.list_plugins()
+  all_plugins = list(plugins)
 
-  all_plugins = sort_plugins(plugins)
+  seen_automagics = set()
+  chosen_configurables_list = {}
+  for amagic in automagics:
+      if amagic in seen_automagics:
+          continue
+      seen_automagics.add(amagic)
+      if isinstance(amagic, interfaces.configuration.ConfigurableInterface):
+          populate_requirements_argparse(parser, amagic.__class__)
+
+  subparser = parser.add_subparsers(
+      title="Plugins",
+      dest="plugin",
+      description="For plugin specific options, run '{} <plugin> --help'".format(
+          "volatility3"
+      ),
+      action=volargparse.HelpfulSubparserAction,
+  )
+  for plugin in sorted(plugins):
+      plugin_parser = subparser.add_parser(
+          plugin,
+          help=plugins[plugin].__doc__,
+          description=plugins[plugin].__doc__,
+      )
+      populate_requirements_argparse(plugin_parser, plugins[plugin])
+      for action in plugin_parser._actions:
+        if action.required and plugin in all_plugins:
+          print(f"arguments required {action} for {plugin}")
+          all_plugins.remove(plugin)
+
+
+  all_plugins = sort_plugins(all_plugins)
 
   get_inputs(all_plugins)
-  found_tests = find_existing_tests('test_volatility.py')
+  skip_tests = ['windows_shimcachemem', 'windows_kpcrs', 'windows_debugregisters', 'windows_virtmap', 'windows_vadyarascan', 'windows_netscan',
+    'windows_passphrase', 'windows_scheduledtasks', 'windows_netstat', 'windows_crashinfo', 'linux_ebpf', 'linux_files', 'linux_capabilities',
+    'linux_pidhashtable', 'linux_kthreads', 'linux_pstree', 'linux_vmayarascan', 'test_windows_hashdump', 'test_windows_lsadump', 'test_windows_cachedump']
 
   extra_weird_count = 0
   kinda_weird_count = 0
@@ -192,8 +254,8 @@ def main():
   needs_test = []
   have_test = []
   for plugin in all_plugins:
-    for test in found_tests:
-      if plugin.class_name.lower() in test.full_name and plugin.os == test.os:
+    for test in skip_tests:
+      if plugin.class_name.lower() in test and plugin.os in test:
         have_test.append(plugin)
         break
     if plugin not in have_test:
@@ -204,18 +266,8 @@ def main():
   need_parameters = []
   failed = []
   for plugin in needs_test:
-    return_code = -1
-    if len(plugin.inputs) == 1:
-        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, '', volatility, python, plugin)
-    if len(plugin.inputs) == 2:
-        return_code = runvol_plugin(plugin.os + '.' + plugin.file_name + '.' + plugin.class_name, '', volatility, python, plugin)
-    if return_code != -1:
-      if return_code == 1:
-        failed.append(plugin)
-      elif return_code == 2:
-        need_parameters.append(plugin)
-      elif return_code != 0:
-        print("weird return code {return_code} for plugin {plugin.class_name}")
+    print("writing test for", plugin.full_name)
+    write_vol_plugin(plugin, "test/test_volatility_plugins.py")
     
 if __name__ == '__main__':
   main()
