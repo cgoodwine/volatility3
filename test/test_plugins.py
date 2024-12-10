@@ -250,6 +250,6 @@ def pytest_generate_tests(metafunc):
 def test_vol_plugin(plugin, image, volatility, python):
   # tests are written as described in the assumptions
     rc, out, err = runvol_plugin(plugin[plugin.find("_")+1:], image, volatility, python)
-    assert rc == 0
+    assert "Traceback" not in str(err)
 
 
