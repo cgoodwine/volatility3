@@ -42,8 +42,8 @@ jobs:
 
     - name: Testing plugins...
       run: |
-        pytest ./test/test_plugins.py --volatility=vol.py --image-dir=./test_images -k 'test_windows and not test_linux' -v
-        pytest ./test/test_plugins.py --volatility=vol.py --image-dir=./test_images -k 'test_linux and not test_windows' -v
+        pytest ./test/test_plugins.py --volatility=vol.py --image-dir=./test_images -k 'test_windows and not linux' -v
+        pytest ./test/test_plugins.py --volatility=vol.py --image-dir=./test_images -k 'test_linux and not win' -v
 
     - name: Testing...
       run: |
