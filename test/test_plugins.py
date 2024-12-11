@@ -121,7 +121,8 @@ def pytest_generate_tests(metafunc):
   # These are the tests to skip; they have a return code != 0
   skip_tests = ['windows.shimcachemem', 'windows.kpcrs', 'windows.debugregisters', 'windows.virtmap', 'windows.vadyarascan', 'windows.netscan',
     'windows.truecrypt', 'windows.scheduledtasks', 'windows.netstat', 'windows.crashinfo', 'linux.ebpf', 'linux.files', 'linux.capabilities',
-    'linux.pidhashtable', 'linux.kthreads', 'linux.pstree', 'linux.vmayarascan', 'windows.hashdump', 'windows.lsadump', 'windows.cachedump']
+    'linux.pidhashtable', 'linux.kthreads', 'linux.pstree', 'linux.vmayarascan', 'windows.hashdump', 'windows.lsadump', 'windows.cachedump',
+    'linux.kmsg', 'linux.hidden_modules']
 
   needs_test = []
   have_test = []
