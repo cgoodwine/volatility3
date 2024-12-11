@@ -122,7 +122,7 @@ def pytest_generate_tests(metafunc):
   skip_tests = ['windows.shimcachemem', 'windows.kpcrs', 'windows.debugregisters', 'windows.virtmap', 'windows.vadyarascan', 'windows.netscan',
     'windows.truecrypt', 'windows.scheduledtasks', 'windows.netstat', 'windows.crashinfo', 'linux.ebpf', 'linux.files', 'linux.capabilities',
     'linux.pidhashtable', 'linux.kthreads', 'linux.pstree', 'linux.vmayarascan', 'windows.hashdump', 'windows.lsadump', 'windows.cachedump', 'windows.scheduled_tasks',
-    'linux.kmsg', 'linux.hidden_modules']
+    'linux.kmsg', 'linux.hidden_modules', 'linux.pagecache']
 
   needs_test = []
   have_test = []
