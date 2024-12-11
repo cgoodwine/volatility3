@@ -10,9 +10,7 @@ import os
 import pytest
 import subprocess
 import sys
-from typing import Any, Dict, List, Tuple, Type, Union
 from volatility3.cli import volargparse, CommandLine
-from volatility3.framework.configuration import requirements
 from volatility3 import framework
 from volatility3.framework import (
   automagic,
