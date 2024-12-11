@@ -17,7 +17,7 @@ import subprocess
 import sys
 import tempfile
 from typing import Any, Dict, List, Tuple, Type, Union
-from volatility3.cli import volargparse
+from volatility3.cli import volargparse, CommandLine
 from volatility3.framework.configuration import requirements
 from volatility3 import framework
 from volatility3.framework import (
@@ -67,71 +67,6 @@ def runvol_plugin(plugin, img, volatility, python, pluginargs=[], globalargs=[])
     )
     return runvol(args, volatility, python)
     
-
-def populate_requirements_argparse(
-    parser: Union[argparse.ArgumentParser, argparse._ArgumentGroup],
-    configurable: Type[interfaces.configuration.ConfigurableInterface],
-):
-    """Adds the plugin's simple requirements to the provided parser.
-
-    Args:
-        parser: The parser to add the plugin's (simple) requirements to
-        configurable: The plugin object to pull the requirements from
-    """
-    if not issubclass(configurable, interfaces.configuration.ConfigurableInterface):
-        raise TypeError(
-            f"Expected ConfigurableInterface type, not: {type(configurable)}"
-        )
-
-    # Construct an argparse group
-
-    for requirement in configurable.get_requirements():
-        additional: Dict[str, Any] = {}
-        if not isinstance(
-            requirement, interfaces.configuration.RequirementInterface
-        ):
-            raise TypeError(
-                "Plugin contains requirements that are not RequirementInterfaces: {}".format(
-                    configurable.__name__
-                )
-            )
-        if isinstance(requirement, interfaces.configuration.SimpleTypeRequirement):
-            additional["type"] = requirement.instance_type
-            if isinstance(requirement, requirements.IntRequirement):
-                additional["type"] = lambda x: int(x, 0)
-            if isinstance(requirement, requirements.BooleanRequirement):
-                additional["action"] = "store_true"
-                if "type" in additional:
-                    del additional["type"]
-        elif isinstance(
-            requirement,
-            volatility3.framework.configuration.requirements.ListRequirement,
-        ):
-            # Allow a list of integers, specified with the convenient 0x hexadecimal format
-            if requirement.element_type == int:
-                additional["type"] = lambda x: int(x, 0)
-            else:
-                additional["type"] = requirement.element_type
-            nargs = "*" if requirement.optional else "+"
-            additional["nargs"] = nargs
-        elif isinstance(
-            requirement,
-            volatility3.framework.configuration.requirements.ChoiceRequirement,
-        ):
-            additional["type"] = str
-            additional["choices"] = requirement.choices
-        else:
-            continue
-        parser.add_argument(
-            "--" + requirement.name.replace("_", "-"),
-            help=requirement.description,
-            default=requirement.default,
-            dest=requirement.name,
-            required=not requirement.optional,
-            **additional,
-        )
-
-
 class Plugin:
   def __init__(self, os, directories, file_name, class_name, full_name, inputs):
     self.os = os
@@ -199,7 +134,7 @@ def pytest_generate_tests(metafunc):
           continue
       seen_automagics.add(amagic)
       if isinstance(amagic, interfaces.configuration.ConfigurableInterface):
-          populate_requirements_argparse(parser, amagic.__class__)
+          CommandLine().populate_requirements_argparse(parser, amagic.__class__)
 
   subparser = parser.add_subparsers(
       title="Plugins",
@@ -215,7 +150,7 @@ def pytest_generate_tests(metafunc):
           help=plugins[plugin].__doc__,
           description=plugins[plugin].__doc__,
       )
-      populate_requirements_argparse(plugin_parser, plugins[plugin])
+      CommandLine().populate_requirements_argparse(plugin_parser, plugins[plugin])
       for action in plugin_parser._actions:
         if action.required and plugin in all_plugins:
           print(f"arguments required {action} for {plugin}")
