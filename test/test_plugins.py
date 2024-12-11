@@ -67,42 +67,6 @@ def runvol_plugin(plugin, img, volatility, python, pluginargs=[], globalargs=[])
     )
     return runvol(args, volatility, python)
     
-class Plugin:
-  def __init__(self, os, directories, file_name, class_name, full_name, inputs):
-    self.os = os
-    self.directories = directories
-    self.file_name = file_name
-    self.class_name = class_name
-    self.full_name = full_name
-    self.inputs = inputs
-
-def sort_plugins(plugins):
-  results = []
-  
-  for plugin in plugins:
-    full_name = plugin
-    count = plugin.count('.')
-    if count == 1:
-      p = Plugin("misc", "", plugin[:plugin.find('.')], plugin[plugin.find('.')+1:], full_name, [])
-      results.append(p)
-    elif count == 2:
-      os = plugin[:plugin.find('.')]
-      file_name = plugin[plugin.find('.')+1:plugin.rfind('.')]
-      class_name = plugin[plugin.rfind('.')+1:]
-      p = Plugin(os, "", file_name, class_name, full_name, [])
-      results.append(p)
-    elif count == 3:
-      os = plugin[:plugin.find('.')]
-      class_name = plugin[plugin.rfind('.')+1:]
-      plugin = plugin[:plugin.rfind('.')]
-      file_name = plugin[plugin.rfind('.')+1:]
-      directories = plugin[plugin.find('.')+1:plugin.rfind('.')]
-      p = Plugin(os, directories, file_name, class_name, full_name, [])
-      results.append(p)
-    else:
-      print("big problem")
-        
-  return results
 
 def pytest_generate_tests(metafunc):
   # COPIED FROM VOLATILITY !!!
@@ -157,18 +121,17 @@ def pytest_generate_tests(metafunc):
           all_plugins.remove(plugin)
 
 
-  all_plugins = sort_plugins(all_plugins)
 
   # These are the tests to skip; they have a return code != 0
-  skip_tests = ['windows_shimcachemem', 'windows_kpcrs', 'windows_debugregisters', 'windows_virtmap', 'windows_vadyarascan', 'windows_netscan',
-    'windows_passphrase', 'windows_scheduledtasks', 'windows_netstat', 'windows_crashinfo', 'linux_ebpf', 'linux_files', 'linux_capabilities',
-    'linux_pidhashtable', 'linux_kthreads', 'linux_pstree', 'linux_vmayarascan', 'test_windows_hashdump', 'test_windows_lsadump', 'test_windows_cachedump']
+  skip_tests = ['windows.shimcachemem', 'windows.kpcrs', 'windows.debugregisters', 'windows.virtmap', 'windows.vadyarascan', 'windows.netscan',
+    'windows.truecrypt', 'windows.scheduledtasks', 'windows.netstat', 'windows.crashinfo', 'linux.ebpf', 'linux.files', 'linux.capabilities',
+    'linux.pidhashtable', 'linux.kthreads', 'linux.pstree', 'linux.vmayarascan', 'windows.hashdump', 'windows.lsadump', 'windows.cachedump']
 
   needs_test = []
   have_test = []
   for plugin in all_plugins:
     for test in skip_tests:
-      if plugin.class_name.lower() in test and plugin.os in test:
+      if test in plugin:
         have_test.append(plugin)
         break
     if plugin not in have_test:
@@ -178,9 +141,10 @@ def pytest_generate_tests(metafunc):
   python='python3'
   parameters = []
   for plugin in needs_test:
-    parameters.append(f"test_{plugin.full_name}")
+    parameters.append(f"test_{plugin}")
   
   metafunc.parametrize('plugin', parameters)
+
 
 def test_vol_plugin(plugin, image, volatility, python):
   # tests are written as described in the assumptions
