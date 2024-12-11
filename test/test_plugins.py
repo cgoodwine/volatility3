@@ -6,16 +6,10 @@
 #
 
 import argparse
-import hashlib
-import json
-import ntpath
 import os
 import pytest
-import re
-import shutil
 import subprocess
 import sys
-import tempfile
 from typing import Any, Dict, List, Tuple, Type, Union
 from volatility3.cli import volargparse, CommandLine
 from volatility3.framework.configuration import requirements
@@ -68,7 +62,7 @@ def runvol_plugin(plugin, img, volatility, python, pluginargs=[], globalargs=[])
     return runvol(args, volatility, python)
     
 
-def pytest_generate_tests(metafunc):
+def get_plugins_from_vol3():
   # COPIED FROM VOLATILITY !!!
   parser = volargparse.HelpfulArgParser(
       add_help=False,
@@ -120,7 +114,11 @@ def pytest_generate_tests(metafunc):
           print(f"arguments required {action} for {plugin}")
           all_plugins.remove(plugin)
 
+  return all_plugins
 
+def pytest_generate_tests(metafunc):
+
+  all_plugins = get_plugins_from_vol3()
 
   # These are the tests to skip; they have a return code != 0
   skip_tests = ['windows.shimcachemem', 'windows.kpcrs', 'windows.debugregisters', 'windows.virtmap', 'windows.vadyarascan', 'windows.netscan',
@@ -137,8 +135,6 @@ def pytest_generate_tests(metafunc):
     if plugin not in have_test:
       needs_test.append(plugin)
 
-  volatility='vol.py'
-  python='python3'
   parameters = []
   for plugin in needs_test:
     parameters.append(f"test_{plugin}")
