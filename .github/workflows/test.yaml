@@ -45,6 +45,11 @@ jobs:
         pytest ./test/test_plugins.py --volatility=vol.py --image=./test_images/win-xp-laptop-2005-06-25.img -k test_windows -v
         pytest ./test/test_plugins.py --volatility=vol.py --image=./test_images/linux-sample-1.bin -k test_linux -v
 
+    - name: Testing unit tests...
+      run: |
+        pytest ./test/unit_test_plugins.py --volatility=vol.py --image=./test_images/win-xp-laptop-2005-06-25.img -k windows. -v
+        pytest ./test/unit_test_plugins.py --volatility=vol.py --image=./test_images/linux-sample-1.bin -k linux. -v
+
     - name: Testing...
       run: |
         pytest ./test/test_volatility.py --volatility=vol.py --image-dir=./test_images -k test_windows -v
