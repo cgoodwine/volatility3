@@ -6,6 +6,7 @@
 #
 
 import argparse
+import copy
 import os
 import pytest
 import subprocess
@@ -84,14 +85,10 @@ def pytest_generate_tests(metafunc):
   parameters = []
   ids = []
   for plugin in all_plugins:
-    parameters.append(all_plugins[plugin])
+    parameters.append((all_plugins[plugin], copy.deepcopy(ctx)))
     ids.append(plugin)
   
-  metafunc.parametrize('plugin', parameters, ids=ids)
-
-@pytest.fixture
-def context():
-  return ctx
+  metafunc.parametrize('plugin, context', parameters, ids=ids)
 
 def test_vol_plugin(plugin, context, image, volatility, python):
   # tests are written as described in the assumptions
