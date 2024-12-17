@@ -82,17 +82,17 @@ def pytest_generate_tests(metafunc):
 
   all_plugins, ctx = get_plugins_from_vol3()
 
-  # These are the tests to skip; they have a return code != 0
+  # These are the tests to skip
   skip_tests = ['windows.virtmap.VirtMap', 'windows.scheduled_tasks.ScheduledTasks', 'windows.crashinfo.Crashinfo', 'linux.hidden_modules.Hidden_modules', 'linux.kmsg.Kmsg']
 
   needs_test = []
-  have_test = []
+  skip_test = []
   for plugin in all_plugins:
     for test in skip_tests:
       if test in plugin:
-        have_test.append(plugin)
+        skip_test.append(plugin)
         break
-    if plugin not in have_test:
+    if plugin not in skip_test:
       needs_test.append(plugin)
 
   parameters = []
@@ -103,35 +103,26 @@ def pytest_generate_tests(metafunc):
   
   metafunc.parametrize('plugin, context', parameters, ids=ids)
 
+
 def test_vol_plugin(plugin, context, image, volatility, python):
   # tests are written as described in the assumptions
   constructed = None
   context.config["automagic.LayerStacker.single_location"] = requirements.URIRequirement.location_from_file(image)
-  try:
-      progress_callback = PrintedProgress()
 
-      automagics = automagic.available(context)
-      base_config_path = "plugins"
-      constructed = plugins.construct_plugin(
-          context,
-          automagics,
-          plugin,
-          base_config_path,
-          progress_callback,
-          CommandLine().file_handler_class_factory(),
-      )
+  progress_callback = PrintedProgress()
 
-  except Exception as e:
-          print(
-          f"Unable to validate the plugin requirements: {e}\n",
-      )
-          assert True == False
+  automagics = automagic.available(context)
+  base_config_path = "plugins"
+  constructed = plugins.construct_plugin(
+      context,
+      automagics,
+      plugin,
+      base_config_path,
+      progress_callback,
+      CommandLine().file_handler_class_factory(),
+  )
 
-  try:
-      # Construct and run the plugin
-      if constructed:
-          grid = constructed.run()
-          print(grid)
-  except Exception as e:
-      print('exception', e)
-      assert 1 == 2
+  # Construct and run the plugin
+  if constructed:
+      grid = constructed.run()
+      print(grid)
