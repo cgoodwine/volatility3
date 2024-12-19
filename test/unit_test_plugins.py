@@ -76,45 +76,34 @@ def get_plugins_from_vol3():
           print(f"arguments required {action} for {plugin}")
           del plugins[plugin]
 
-  return plugins, ctx
+  return plugins
 
 def pytest_generate_tests(metafunc):
 
-  all_plugins, ctx = get_plugins_from_vol3()
-
-  # These are the tests to skip
-  skip_tests = ['windows.virtmap.VirtMap', 'windows.scheduled_tasks.ScheduledTasks', 'windows.crashinfo.Crashinfo', 'linux.hidden_modules.Hidden_modules', 'linux.kmsg.Kmsg']
-
-  needs_test = []
-  skip_test = []
-  for plugin in all_plugins:
-    for test in skip_tests:
-      if test in plugin:
-        skip_test.append(plugin)
-        break
-    if plugin not in skip_test:
-      needs_test.append(plugin)
+  all_plugins = get_plugins_from_vol3()
 
   parameters = []
   ids = []
-  for plugin in needs_test:
-    parameters.append((all_plugins[plugin], copy.deepcopy(ctx)))
+  for plugin in all_plugins:
+    parameters.append(all_plugins[plugin])
     ids.append(plugin)
+
   
-  metafunc.parametrize('plugin, context', parameters, ids=ids)
+  metafunc.parametrize('plugin', parameters, ids=ids)
 
 
-def test_vol_plugin(plugin, context, image, volatility, python):
+def test_vol_plugin(plugin, image):
   # tests are written as described in the assumptions
+  ctx = contexts.Context()  # Construct a blank context
   constructed = None
-  context.config["automagic.LayerStacker.single_location"] = requirements.URIRequirement.location_from_file(image)
+  ctx.config["automagic.LayerStacker.single_location"] = requirements.URIRequirement.location_from_file(image)
 
   progress_callback = PrintedProgress()
 
-  automagics = automagic.available(context)
+  automagics = automagic.available(ctx)
   base_config_path = "plugins"
   constructed = plugins.construct_plugin(
-      context,
+      ctx,
       automagics,
       plugin,
       base_config_path,
